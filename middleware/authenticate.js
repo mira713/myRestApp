@@ -4,17 +4,17 @@ require("dotenv").config();
 const authenticate = (req, res, next) => {
   const token = req.headers.tkn;
   if (token) {
-    jwt.verify(token, process.env.secretKey, (err, decoded)=>{
-        console.log(decoded)
-        if(decoded){
-            req.body.user = decoded.userId
-            next();
-        }else{
-            res.send('token is broken')
-        }
-    })
+    jwt.verify(token, process.env.secretKey, (err, decoded) => {
+      console.log(decoded);
+      if (decoded) {
+        req.body.user = decoded.userId;
+        next();
+      } else {
+        res.send({ err: "token is broken" });
+      }
+    });
   } else {
-    res.send("could not find token or not logged in");
+    res.send({ response: "could not find token or not logged in" });
   }
 };
 

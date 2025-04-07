@@ -20,11 +20,11 @@ userRouter.post("/register", async (req, res) => {
     bcrypt.hash(password, 3, async (err, hash) => {
       if (err) {
         console.log(err.message);
-        res.send("Error in hashing");
+        res.send({ err: "Error in hashing" });
       } else {
         const newUser = new UserModel({ name, email, password: hash });
         await newUser.save();
-        res.send("User Registered");
+        res.send({ response: "User Registered" });
       }
     });
   } catch (e) {

@@ -16,7 +16,7 @@ todoRouter.post("/add", async (req, res) => {
   try {
     const task = new TodoModel(body);
     await task.save();
-    res.send("task added sucessfully");
+    res.send({ respose: "task added sucessfully" });
   } catch (e) {
     res.send(e.message);
   }
@@ -25,7 +25,7 @@ todoRouter.post("/add", async (req, res) => {
 todoRouter.delete("/:id", async (req, res) => {
   const { id } = req.params;
   try {
-    await TodoModel.deleteOne({id});
+    await TodoModel.deleteOne({ id });
     res.send({ message: "Item Deleted" });
   } catch (e) {
     res.send(e.message);
