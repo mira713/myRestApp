@@ -8,6 +8,7 @@ const authenticate = (req, res, next) => {
       console.log(decoded);
       if (decoded) {
         req.body.user = decoded.userId;
+        req.user = decoded.userId;
         next();
       } else {
         res.send({ err: "token is broken" });

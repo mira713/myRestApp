@@ -36,7 +36,6 @@ userRouter.post("/login", async (req, res) => {
   const { email, password } = req.body;
   try {
     const user = await UserModel.find({ email });
-    console.log("haha", user);
     if (user.length) {
       const token = jwt.sign({ userId: user[0]._id }, process.env.secretKey);
       bcrypt.compare(password, user[0].password, (err, result) => {

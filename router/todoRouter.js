@@ -3,8 +3,9 @@ const todoRouter = express.Router();
 const { TodoModel } = require("../model/todoModel");
 
 todoRouter.get("/", async (req, res) => {
+  const id = req.user;
   try {
-    const allTodoes = await TodoModel.find();
+    const allTodoes = await TodoModel.find({ user: id });
     res.send(allTodoes);
   } catch (e) {
     res.send(e.message);
