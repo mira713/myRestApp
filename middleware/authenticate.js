@@ -8,6 +8,7 @@ const authenticate = (req, res, next) => {
     jwt.verify(token, process.env.secretKey, (err, decoded) => {
       console.log(decoded);
       if (decoded) {
+        if (!req.body) req.body = {};
         req.body.user = decoded.userId;
         req.user = decoded.userId;
         next();

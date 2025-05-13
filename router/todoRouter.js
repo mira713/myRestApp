@@ -26,9 +26,21 @@ todoRouter.post("/add", async (req, res) => {
 todoRouter.delete("/:id", async (req, res) => {
   const { id } = req.params;
   try {
-    await TodoModel.deleteOne({ id });
+    await TodoModel.findByIdAndDelete(id);
     res.send({ message: "Item Deleted" });
   } catch (e) {
+    res.send(e.message);
+  }
+});
+
+todoRouter.patch("/update/:id", async (req, res) => {
+  const id = req.params.id;
+  const task = req.body.task;
+  const todoheader = req.body.todoheader;
+  try{
+    await TodoModel.findByIdAndUpdate(id, { task, todoheader });
+    res.send({message:"Item Updated"});
+  }catch(e){
     res.send(e.message);
   }
 });
