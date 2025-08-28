@@ -5,6 +5,7 @@ const db = require("./db");
 const { authenticate } = require("./middleware/authenticate");
 const { userRouter } = require("./router/userRouter");
 const { todoRouter } = require("./router/todoRouter");
+const { timepassRouter } = require("./router/timepassRouter");
 
 const app = express();
 
@@ -18,6 +19,7 @@ app.get("/", (req, res) => {
 app.use("/users", userRouter);
 app.use(authenticate)
 app.use("/todo", todoRouter);
+app.use("/timepass", timepassRouter)
 
 app.listen(process.env.PORT, async () => {
   try {
