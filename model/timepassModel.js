@@ -6,6 +6,8 @@ const TimepassSchema = mongoose.Schema(
     price: { type: Number },
     img: { type: String },
     rating: { type: Number },
+    quantity: { type: String },
+    user: [{ type: String }],
   },
   { versionKey: false }
 );
