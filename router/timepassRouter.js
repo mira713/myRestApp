@@ -7,7 +7,17 @@ timepassRouter.get("/", async (req, res) => {
     const allTimepassDish = await TimepassModel.find();
     res.send(allTimepassDish);
   } catch (e) {
-    res.send(e.message);
+    res.send({ error: e.message });
+  }
+});
+
+timepassRouter.get("/:foodId", async (req, res) => {
+  const { foodId } = req.params;
+  try {
+    const timepassDish = await TimepassModel.findOne({ _id: foodId });
+    res.send(timepassDish);
+  } catch (e) {
+    res.send({ error: e.message });
   }
 });
 
@@ -18,7 +28,7 @@ timepassRouter.post("/add", async (req, res) => {
     await dish.save();
     res.send({ respose: "dish added sucessfully" });
   } catch (e) {
-    res.send(e.message);
+    res.send({ error: e.message });
   }
 });
 
@@ -28,7 +38,7 @@ timepassRouter.delete("/:id", async (req, res) => {
     await TimepassModel.findByIdAndDelete(id);
     res.send({ message: "Item Deleted" });
   } catch (e) {
-    res.send(e.message);
+    res.send({ error: e.message });
   }
 });
 
@@ -38,11 +48,30 @@ timepassRouter.patch("/update/:id", async (req, res) => {
   const price = req.body.price;
   const img = req.body.img;
   const quantity = req.body.quantity;
+  const user = req.body.user;
   try {
-    await TimepassModel.findByIdAndUpdate(id, { dish, price, img , quantity});
+    await TimepassModel.findByIdAndUpdate(id, {
+      dish,
+      price,
+      img,
+      quantity,
+      user,
+    });
     res.send({ message: "Item Updated" });
   } catch (e) {
-    res.send(e.message);
+    res.send({ error: e.message });
+  }
+});
+
+timepassRouter.get("/filter/:name", async (req, res) => {
+  const { name } = req.params;
+  try {
+    const filteredItem = await TimepassModel.find({
+      dish: { $regex: name, $options: "i" },
+    });
+    res.send(filteredItem);
+  } catch (e) {
+    res.send({ error: e.message });
   }
 });
 
@@ -59,8 +88,8 @@ timepassRouter.patch("/wishlist/:id", async (req, res) => {
     if (!dish.user.includes(user)) {
       dish.user.push(user);
       await dish.save();
-    }else{
-      dish.user = dish.user.filter(u => u !== user);
+    } else {
+      dish.user = dish.user.filter((u) => u !== user);
       await dish.save();
       return res.send({ message: "Removed from wishlist", dish });
     }
