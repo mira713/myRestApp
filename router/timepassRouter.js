@@ -100,4 +100,11 @@ timepassRouter.patch("/wishlist/:id", async (req, res) => {
   }
 });
 
+timepassRouter.post("/confirmation/:foodId", (req, res) => {
+  const { foodId } = req.params;
+  const price = req.body.price;
+  const quantity = req.body.quantity;
+  res.send({ foodId, price, quantity });
+});
+
 module.exports = { timepassRouter };
