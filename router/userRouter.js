@@ -53,4 +53,31 @@ userRouter.post("/login", async (req, res) => {
   }
 });
 
+// ...existing code...
+
+userRouter.get("/download", async (req, res) => {
+  try {
+    res.setHeader("Content-Disposition", "attachment; filename=users.jsv");
+    res.setHeader("Content-Type", "application/jsv");
+
+    // Create a cursor to stream users from MongoDB
+    const cursor = UserModel.find().cursor();
+    res.write("[\n");
+    let first = true;
+
+    for await (const user of cursor) {
+      if (!first) res.write(",\n");
+      res.write(JSON.stringify(user));
+      first = false;
+    }
+
+    res.write("\n]");
+    res.end();
+  } catch (e) {
+    res.status(500).send(e.message);
+  }
+});
+
+// ...existing code...
+
 module.exports = { userRouter };
