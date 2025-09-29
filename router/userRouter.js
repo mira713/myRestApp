@@ -53,31 +53,47 @@ userRouter.post("/login", async (req, res) => {
   }
 });
 
-// ...existing code...
+// userRouter.get("/download", async (req, res) => {
+//   try {
+//     const users = await UserModel.find().lean();
+
+//     // Prepare CSV header
+//     const header = "name,email,password\n";
+//     // Prepare CSV rows
+//     const rows = users.map(u => 
+//       `"${u.name}","${u.email}","${u.password}"`
+//     ).join("\n");
+
+//     const csvData = header + rows;
+
+//     res.setHeader("Content-Disposition", "attachment; filename=users.csv");
+//     res.setHeader("Content-Type", "text/csv");
+
+//     res.send(csvData);
+//   } catch (e) {
+//     res.status(500).send(e.message);
+//   }
+// });
 
 userRouter.get("/download", async (req, res) => {
   try {
-    res.setHeader("Content-Disposition", "attachment; filename=users.jsv");
-    res.setHeader("Content-Type", "application/jsv");
+    res.setHeader("Content-Disposition", "attachment; filename=users.csv");
+    res.setHeader("Content-Type", "text/csv");
 
-    // Create a cursor to stream users from MongoDB
-    const cursor = UserModel.find().cursor();
-    res.write("[\n");
-    let first = true;
+    // Write CSV header
+    res.write("name,email,password\n");
 
+    // Stream users from MongoDB
+    const cursor = UserModel.find().lean().cursor();
     for await (const user of cursor) {
-      if (!first) res.write(",\n");
-      res.write(JSON.stringify(user));
-      first = false;
+      res.write(`"${user.name}","${user.email}","${user.password}"\n`);
     }
 
-    res.write("\n]");
     res.end();
   } catch (e) {
     res.status(500).send(e.message);
   }
 });
 
-// ...existing code...
 
 module.exports = { userRouter };
