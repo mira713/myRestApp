@@ -4,6 +4,8 @@ const { UserModel } = require("../model/userModel");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
+const crypto = require("crypto");
+const transporter = require("../mailer");
 
 userRouter.get("/", async (req, res) => {
   try {
@@ -53,6 +55,64 @@ userRouter.post("/login", async (req, res) => {
   }
 });
 
+
+// --- Forgot Password and Reset Password Endpoints ---
+
+// 1. Request password reset
+userRouter.post("/sendEmail", async (req, res) => {
+  const { email } = req.body;
+  console.log(req.body,email);
+  try {
+    const user = await UserModel.findOne({ email });
+    if (!user) return res.status(404).send({ message: "User not found" });
+
+    // Generate token
+    const token = crypto.randomBytes(32).toString("hex");
+    const tokenExpiry = Date.now() + 1000 * 60 * 15; // 15 minutes
+
+    // Save token and expiry to user (add fields if not present)
+    user.resetToken = token;
+    user.resetTokenExpiry = tokenExpiry;
+    await user.save();
+
+    // Send email
+    const resetLink = `${process.env.FRONTEND_URL}/resetPassword?token=${token}&email=${email}`;
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: "Password Reset Request",
+      html: `<p>Click <a href='${resetLink}'>here</a> to reset your password. This link expires in 15 minutes.</p>`
+    });
+
+    res.send({ message: "Password reset email sent" });
+  } catch (e) {
+    res.status(500).send({ error: e.message });
+  }
+});
+
+// 2. Reset password
+userRouter.post("/resetPassword", async (req, res) => {
+  const { email, token, newPassword } = req.body;
+  try {
+    const user = await UserModel.findOne({ email, resetToken: token });
+    if (!user || !user.resetTokenExpiry || user.resetTokenExpiry < Date.now()) {
+      return res.status(400).send({ message: "Invalid or expired token" });
+    }
+
+    // Hash new password
+    bcrypt.hash(newPassword, 3, async (err, hash) => {
+      if (err) return res.status(500).send({ error: "Hashing error" });
+      user.password = hash;
+      user.resetToken = undefined;
+      user.resetTokenExpiry = undefined;
+      await user.save();
+      res.send({ message: "Password reset successful" });
+    });
+  } catch (e) {
+    res.status(500).send({ error: e.message });
+  }
+});
+
 // userRouter.get("/download", async (req, res) => {
 //   try {
 //     const users = await UserModel.find().lean();
@@ -69,7 +129,7 @@ userRouter.post("/login", async (req, res) => {
 //     res.setHeader("Content-Disposition", "attachment; filename=users.csv");
 //     res.setHeader("Content-Type", "text/csv");
 
-//     res.send(csvData);
+//     res.send();
 //   } catch (e) {
 //     res.status(500).send(e.message);
 //   }
@@ -94,6 +154,5 @@ userRouter.get("/download", async (req, res) => {
     res.status(500).send(e.message);
   }
 });
-
 
 module.exports = { userRouter };
