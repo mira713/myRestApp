@@ -5,7 +5,13 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const crypto = require("crypto");
-const transporter = require("../mailer");
+const Mailjet = require("node-mailjet");
+
+// initialize Mailjet client
+const mailjet = Mailjet.apiConnect(
+  process.env.MAILJET_API_KEY,
+  process.env.MAILJET_API_SECRET
+);
 
 userRouter.get("/", async (req, res) => {
   try {
@@ -55,38 +61,90 @@ userRouter.post("/login", async (req, res) => {
   }
 });
 
-
 // --- Forgot Password and Reset Password Endpoints ---
 
 // 1. Request password reset
+// userRouter.post("/sendEmail", async (req, res) => {
+//   const { email } = req.body;
+//   try {
+//     const user = await UserModel.findOne({ email });
+//     if (!user) return res.status(404).send({ message: "User not found" });
+
+//     // Generate token
+//     const token = crypto.randomBytes(32).toString("hex");
+//     const tokenExpiry = Date.now() + 1000 * 60 * 15; // 15 minutes
+
+//     // Save token and expiry to user (add fields if not present)
+//     user.resetToken = token;
+//     user.resetTokenExpiry = tokenExpiry;
+//     await user.save();
+
+//     // Send email
+//     const resetLink = `${process.env.FRONTEND_URL}/resetPassword?token=${token}&email=${email}`;
+//     await transporter.sendMail({
+//       from: process.env.EMAIL_USER,
+//       to: email,
+//       subject: "Password Reset Request",
+//       html: `<p>Click <a href='${resetLink}'>here</a> to reset your password. This link expires in 15 minutes.</p>`,
+//     });
+
+//     res.send({ message: "Password reset email sent" });
+//   } catch (e) {
+//     res.status(500).send({ error: e.message });
+//   }
+// });
+
 userRouter.post("/sendEmail", async (req, res) => {
   const { email } = req.body;
-  console.log(req.body,email);
+
   try {
+    // 1️⃣ Find user
     const user = await UserModel.findOne({ email });
     if (!user) return res.status(404).send({ message: "User not found" });
 
-    // Generate token
+    // 2️⃣ Generate token and expiry
     const token = crypto.randomBytes(32).toString("hex");
     const tokenExpiry = Date.now() + 1000 * 60 * 15; // 15 minutes
 
-    // Save token and expiry to user (add fields if not present)
+    // Save token to DB
     user.resetToken = token;
     user.resetTokenExpiry = tokenExpiry;
     await user.save();
 
-    // Send email
-    const resetLink = `${process.env.FRONTEND_URL}/resetPassword?token=${token}&email=${email}`;
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to: email,
-      subject: "Password Reset Request",
-      html: `<p>Click <a href='${resetLink}'>here</a> to reset your password. This link expires in 15 minutes.</p>`
+    // 3️⃣ Build reset link
+    const resetLink = `${
+      process.env.FRONTEND_URL
+    }/resetPassword?token=${token}&email=${encodeURIComponent(email)}`;
+
+    // 4️⃣ Send email via Mailjet
+    const request = mailjet.post("send", { version: "v3.1" }).request({
+      Messages: [
+        {
+          From: {
+            Email: process.env.EMAIL_USER,
+            Name: "Mitali Sinha",
+          },
+          To: [
+            {
+              Email: email,
+              Name: user.name || "User",
+            },
+          ],
+          Subject: "Password Reset Request",
+          HTMLPart: `<h3>Hello ${user.name || ""},</h3>
+            <p>You requested to reset your password.</p>
+            <p>Click <a href="${resetLink}">here</a> to reset it. This link will expire in 15 minutes.</p>
+            <p>Thanks,<br/>Your App Team</p>`,
+        },
+      ],
     });
 
-    res.send({ message: "Password reset email sent" });
-  } catch (e) {
-    res.status(500).send({ error: e.message });
+    const result = await request;
+    console.log("Email sent:", result.body);
+    res.send({ message: "Password reset email sent successfully" });
+  } catch (err) {
+    console.error("Error sending email:", err.message);
+    res.status(500).send({ error: err.message });
   }
 });
 
@@ -113,6 +171,8 @@ userRouter.post("/resetPassword", async (req, res) => {
   }
 });
 
+// <---------------------download CSV of users---------------------->
+
 // userRouter.get("/download", async (req, res) => {
 //   try {
 //     const users = await UserModel.find().lean();
@@ -120,7 +180,7 @@ userRouter.post("/resetPassword", async (req, res) => {
 //     // Prepare CSV header
 //     const header = "name,email,password\n";
 //     // Prepare CSV rows
-//     const rows = users.map(u => 
+//     const rows = users.map(u =>
 //       `"${u.name}","${u.email}","${u.password}"`
 //     ).join("\n");
 
