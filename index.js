@@ -6,6 +6,7 @@ const { authenticate } = require("./middleware/authenticate");
 const { userRouter } = require("./router/userRouter");
 const { todoRouter } = require("./router/todoRouter");
 const { timepassRouter } = require("./router/timepassRouter");
+const { reliableRouter } = require("./router/reliableRouter");
 const port = process.env.PORT || 8000;
 
 const app = express();
@@ -18,6 +19,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/users", userRouter);
+app.use("/reliable", reliableRouter);
 app.use(authenticate);
 app.use("/todo", todoRouter);
 app.use("/timepass", timepassRouter);
