@@ -61,6 +61,7 @@ userRouter.post("/login", async (req, res) => {
   }
 });
 
+
 // --- Forgot Password and Reset Password Endpoints ---
 
 // 1. Request password reset
@@ -115,7 +116,6 @@ userRouter.post("/sendEmail", async (req, res) => {
     const resetLink = `${
       process.env.FRONTEND_URL
     }/resetPassword?token=${token}&email=${encodeURIComponent(email)}`;
-
     // 4️⃣ Send email via Mailjet
     const request = mailjet.post("send", { version: "v3.1" }).request({
       Messages: [
@@ -140,7 +140,6 @@ userRouter.post("/sendEmail", async (req, res) => {
     });
 
     const result = await request;
-    console.log("Email sent:", result.body);
     res.send({ message: "Password reset email sent successfully" });
   } catch (err) {
     console.error("Error sending email:", err.message);
